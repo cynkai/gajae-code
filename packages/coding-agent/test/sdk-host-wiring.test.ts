@@ -1890,6 +1890,7 @@ test("interactive extension context advertises typed SDK controls and forwards p
 	const targetModel = { provider: "runtime-provider", id: "runtime-model" };
 
 	let mode: "prompt" | "allow" | "deny" = "prompt";
+	let editorChromeRefreshes = 0;
 	const runner = {
 		initialize(
 			_actions: ExtensionActions,
@@ -1901,7 +1902,9 @@ test("interactive extension context advertises typed SDK controls and forwards p
 		},
 	};
 	const controller = new ExtensionUiController({
-		updateEditorChrome: () => {},
+		updateEditorChrome: () => {
+			editorChromeRefreshes++;
+		},
 		session: {
 			extensionRunner: runner,
 			setSdkPermissionProvider: (provider: typeof installed) => {
@@ -1938,6 +1941,8 @@ test("interactive extension context advertises typed SDK controls and forwards p
 		}),
 	).toEqual({ provider: "runtime-provider", modelId: "runtime-model", thinkingLevel: "high" });
 	expect(selected).toEqual({ provider: "runtime-provider", id: "runtime-model", thinkingLevel: "high" });
+	// Every SDK control call refreshes the editor chrome once it settles (#6861).
+	expect(editorChromeRefreshes).toBe(2);
 	await expect(
 		contextActions?.sdkControl?.("model.set", {
 			id: "runtime-provider/runtime-model",
